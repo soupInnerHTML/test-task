@@ -1,4 +1,7 @@
-import React, {useState} from 'react';
+import { Snackbar } from "@material-ui/core";
+import uniqueId from "lodash/uniqueId";
+import { observer } from "mobx-react-lite";
+import React, { useState } from 'react';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -9,6 +12,7 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
+import fauth from '../store/Auth'
 
 const useStyles = makeStyles((theme) => ({
     paper: {
@@ -44,7 +48,6 @@ const fields = {
     signUp: [{
         name: 'firstName',
         label: 'First Name',
-        autoFocus: true,
         layout: layouts.half
     },
     {
@@ -62,7 +65,8 @@ const fields = {
         name: 'password',
         label: 'Password',
         layout: layouts.full,
-        fullWidth: true
+        fullWidth: true,
+        type: 'password'
     }],
     signIn: [{
         name: 'email',
@@ -74,35 +78,57 @@ const fields = {
     {
         name: 'password',
         label: 'Password',
+        type: 'password',
         layout: layouts.full,
         fullWidth: true
     }]
 }
 
-export default function Auth() {
-    const classes = useStyles();
+const Auth = () => {
+    const classes = useStyles()
     const auth = ['signUp', 'signIn']
     const authNiceNames = ['Sign up', 'Sign in']
     const [authType, setAuthType] = useState(0)
+    const [inputErrors, setInputErrors] = useState({})
+
+    const authUser = (e) => {
+        e.preventDefault()
+        const formData = Object.fromEntries(new FormData(e.currentTarget).entries())
+
+        fauth[auth[authType]](formData) //auth.signIn() or auth.signUp()
+    }
+
+    const switchAuthType = () => {
+        setAuthType(+!authType)
+        setInputErrors({})
+    }
 
     return (
         <Container component="main" maxWidth="xs">
             <CssBaseline />
+
+            <Snackbar open={!!fauth.error} message={fauth.error}>
+
+            </Snackbar>
             <div className={classes.paper}>
+
                 <Avatar className={classes.avatar}>
                     <LockOutlinedIcon />
                 </Avatar>
+
                 <Typography component="h1" variant="h5">
                     {authNiceNames[authType]}
                 </Typography>
-                <form className={classes.form} noValidate>
+
+                <form className={classes.form} onSubmit={authUser}>
                     <Grid container spacing={2}>
                         {
-                            fields[auth[authType]].map(({layout, ...field}) => (
-                                <Grid item {...layout}>
+                            fields[auth[authType]].map(({ layout, ...field }) => (
+                                <Grid item {...layout} key={uniqueId()}>
                                     <TextField
                                         required
                                         variant="outlined"
+                                        error={inputErrors[field.name]}
                                         {...field}
                                     />
                                 </Grid>
@@ -116,6 +142,7 @@ export default function Auth() {
                         variant="contained"
                         color="primary"
                         className={classes.submit}
+                        disabled={fauth.isFetching}
                     >
                         {authNiceNames[authType]}
                     </Button>
@@ -124,7 +151,7 @@ export default function Auth() {
                             {/*
                                 +!authType === switch to different authType
                             */}
-                            <Link href="#" variant="body2" onClick={() => setAuthType(+!authType)}>
+                            <Link href="#" variant="body2" onClick={switchAuthType}>
                                 {/*
                                     Already have an account? Sign in
                                     or
@@ -141,3 +168,5 @@ export default function Auth() {
         </Container>
     )
 }
+
+export default observer(Auth)
