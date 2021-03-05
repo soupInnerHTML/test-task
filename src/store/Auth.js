@@ -1,7 +1,7 @@
 import { makeAutoObservable, configure } from "mobx";
 import firebase from "firebase/app";
 import 'firebase/database'
-import bcrypt from 'bcryptjs'
+import "firebase/auth"
 
 configure({
     enforceActions: "never",
@@ -16,15 +16,20 @@ class Auth {
     async signUp(payload) {
         try {
             this.isFetching = true
-            this.error = false
-            const isUserExist = await firebase.database().ref('users/' + payload.email).get()
-            if (isUserExist.val()) {
-                this.isFetching = false
-                return this.error = "The user is already exist!"
-            }
-            let password = await bcrypt.hash(payload.password, 8)
-            await firebase.database().ref('users/' + payload.email).set({ ...payload, password })
-            this._auth(payload.email)
+            const { email, password, firstName, lastName } = payload
+            const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password)
+            const { user, } = userCredential
+            await user.updateProfile({
+                displayName: `${firstName} ${lastName}`,
+            })
+            const { uid } = user
+            await firebase.database().ref('users/' + uid).set({
+                email,
+                firstName,
+                lastName,
+                uid
+            })
+            this._auth(uid)
         }
         catch (e) {
             this.isFetching = false
@@ -32,19 +37,11 @@ class Auth {
         }
     }
 
-    async signIn(payload) {
+    async signIn({ email, password }) {
         try {
             this.isFetching = true
-            this.error = false
-            const user = await firebase.database().ref('users/' + payload.email).get()
-            const isMatch = await bcrypt.compare(payload.password, user.val()?.password || '')
-
-            if (!user.val() || !isMatch) {
-                this.isFetching = false
-                return this.error = "Wrong password or email"
-            }
-
-            this._auth(payload.email)
+            const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password)
+            this._auth(userCredential.user.uid)
         }
         catch (e) {
             this.isFetching = false
@@ -52,10 +49,10 @@ class Auth {
         }
     }
 
-    _auth(email) {
-        localStorage.setItem('auth', email)
+    _auth(token) {
+        localStorage.setItem('auth', token)
         this.isAuth = true
-        this.token = email
+        this.token = token
         this.isFetching = false
     }
 

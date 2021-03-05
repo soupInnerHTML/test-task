@@ -1,18 +1,18 @@
 import { Snackbar } from "@material-ui/core";
-import uniqueId from "lodash/uniqueId";
 import { observer } from "mobx-react-lite";
 import React, { useState } from 'react';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import TextField from '@material-ui/core/TextField';
 import Link from '@material-ui/core/Link';
 import Grid from '@material-ui/core/Grid';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
-import fauth from '../store/Auth'
+import fauth from '../../store/Auth'
+import AuthInput from './AuthInput'
+import Alert from '@material-ui/lab/Alert';
 
 const useStyles = makeStyles((theme) => ({
     paper: {
@@ -46,22 +46,27 @@ const layouts = {
 
 const fields = {
     signUp: [{
+        id: "1",
         name: 'firstName',
         label: 'First Name',
+        autoFocus: true,
         layout: layouts.half
     },
     {
+        id: "2",
         name: 'lastName',
         label: 'Last Name',
         layout: layouts.half
     },
     {
+        id: "3",
         name: 'email',
         label: 'Email Address',
         layout: layouts.full,
         fullWidth: true
     },
     {
+        id: "4",
         name: 'password',
         label: 'Password',
         layout: layouts.full,
@@ -69,6 +74,7 @@ const fields = {
         type: 'password'
     }],
     signIn: [{
+        id: "5",
         name: 'email',
         label: 'Email Address',
         layout: layouts.full,
@@ -76,6 +82,7 @@ const fields = {
         fullWidth: true
     },
     {
+        id: "6",
         name: 'password',
         label: 'Password',
         type: 'password',
@@ -89,7 +96,6 @@ const Auth = () => {
     const auth = ['signUp', 'signIn']
     const authNiceNames = ['Sign up', 'Sign in']
     const [authType, setAuthType] = useState(0)
-    const [inputErrors, setInputErrors] = useState({})
 
     const authUser = (e) => {
         e.preventDefault()
@@ -99,17 +105,20 @@ const Auth = () => {
     }
 
     const switchAuthType = () => {
+        {/*
+            +!authType === switch to different authType
+        */}
         setAuthType(+!authType)
-        setInputErrors({})
     }
 
     return (
         <Container component="main" maxWidth="xs">
             <CssBaseline />
 
-            <Snackbar open={!!fauth.error} message={fauth.error}>
-
+            <Snackbar open={!!fauth.error}>
+                <Alert severity="error">{fauth.error}</Alert>
             </Snackbar>
+
             <div className={classes.paper}>
 
                 <Avatar className={classes.avatar}>
@@ -124,14 +133,7 @@ const Auth = () => {
                     <Grid container spacing={2}>
                         {
                             fields[auth[authType]].map(({ layout, ...field }) => (
-                                <Grid item {...layout} key={uniqueId()}>
-                                    <TextField
-                                        required
-                                        variant="outlined"
-                                        error={inputErrors[field.name]}
-                                        {...field}
-                                    />
-                                </Grid>
+                                <AuthInput {...{ field, layout }} key={field.id} />
                             ))
                         }
                     </Grid>
@@ -148,9 +150,6 @@ const Auth = () => {
                     </Button>
                     <Grid container justify="flex-end">
                         <Grid item>
-                            {/*
-                                +!authType === switch to different authType
-                            */}
                             <Link href="#" variant="body2" onClick={switchAuthType}>
                                 {/*
                                     Already have an account? Sign in

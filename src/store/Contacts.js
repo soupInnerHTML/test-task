@@ -9,19 +9,17 @@ class Contacts {
     electedIds = []
 
     elect(user) {
-        console.log(auth.token)
         let ref = firebase.database().ref(`users/${auth.token}/elected`)
         if (user.isElected) {
-            ref.child(user.email).remove()
+            ref.child(user.uid).remove()
 
         }
         else {
-            ref.update({ [user.email]: user.email })
+            ref.update({ [user.uid]: user.uid })
         }
     }
 
     observer = () => {
-        console.log('Token:' + auth.token)
         if (auth.token) {
             new Promise(resolve => {
                 firebase.database().ref('users').on('value', (snapshot) => {
@@ -29,7 +27,7 @@ class Contacts {
                     this.common = data.map(user => (
                         {
                             ...user,
-                            isElected: this.electedIds.includes(user.email)
+                            isElected: this.electedIds.includes(user.uid)
                         }
                     ))
                     resolve()
@@ -41,11 +39,11 @@ class Contacts {
                         this.common = this.common.map(user => {
                             return {
                                 ...user,
-                                isElected: _elected.includes(user.email)
+                                isElected: _elected.includes(user.uid)
                             }
                         })
                         this.electedIds = _elected
-                        this.elected = this.common.filter(user => _elected.includes(user.email))
+                        this.elected = this.common.filter(user => _elected.includes(user.uid))
                     })
                 })
         }
